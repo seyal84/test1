@@ -1,0 +1,96 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: homeflow-postgres
+    environment:
+      POSTGRES_DB: homeflow
+      POSTGRES_USER: homeflow
+      POSTGRES_PASSWORD: homeflow_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./apps/backend/prisma/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - homeflow-network
+
+  # Redis for caching and sessions
+  redis:
+    image: redis:7-alpine
+    container_name: homeflow-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - homeflow-network
+
+  # Backend API
+  backend:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+    container_name: homeflow-backend
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://homeflow:homeflow_password@postgres:5432/homeflow?schema=public
+      - REDIS_URL=redis://redis:6379
+      - PORT=3001
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./apps/backend:/app
+      - /app/node_modules
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - homeflow-network
+    command: npm run start:dev
+
+  # Frontend React App
+  frontend:
+    build:
+      context: .
+      dockerfile: apps/frontend/Dockerfile
+    container_name: homeflow-frontend
+    environment:
+      - NODE_ENV=development
+      - REACT_APP_API_URL=http://localhost:3001/api/v1
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./apps/frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - homeflow-network
+    command: npm start
+
+  # Nginx reverse proxy (for production-like setup)
+  nginx:
+    image: nginx:alpine
+    container_name: homeflow-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./ssl:/etc/nginx/ssl
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - homeflow-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  homeflow-network:
+    driver: bridge

@@ -1,0 +1,253 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  BUYER
+  SELLER
+  SERVICE_PROVIDER
+  ADMIN
+}
+
+enum PropertyType {
+  HOUSE
+  APARTMENT
+  CONDO
+  TOWNHOUSE
+  LAND
+  COMMERCIAL
+}
+
+enum PropertyStatus {
+  ACTIVE
+  PENDING
+  SOLD
+  WITHDRAWN
+}
+
+enum OfferStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  COUNTERED
+  WITHDRAWN
+}
+
+enum EscrowStatus {
+  OPEN
+  IN_PROGRESS
+  CLOSED
+  CANCELLED
+}
+
+enum ServiceType {
+  INSPECTOR
+  APPRAISER
+  LENDER
+  ATTORNEY
+  AGENT
+  CONTRACTOR
+  OTHER
+}
+
+enum BookingStatus {
+  REQUESTED
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  cognitoId   String?  @unique
+  firstName   String
+  lastName    String
+  phone       String?
+  role        UserRole @default(BUYER)
+  avatar      String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  listings          Listing[]
+  offers            Offer[]
+  escrows           Escrow[]
+  serviceProviders  ServiceProvider[]
+  bookings          Booking[]
+  auditLogs         AuditLog[]
+
+  @@map("users")
+}
+
+model Listing {
+  id            String         @id @default(cuid())
+  title         String
+  description   String
+  price         Decimal        @db.Decimal(12, 2)
+  propertyType  PropertyType
+  status        PropertyStatus @default(ACTIVE)
+  address       String
+  city          String
+  state         String
+  zipCode       String
+  bedrooms      Int?
+  bathrooms     Decimal?       @db.Decimal(3, 1)
+  squareFeet    Int?
+  lotSize       Decimal?       @db.Decimal(10, 2)
+  yearBuilt     Int?
+  features      Json?
+  mlsId         String?        @unique
+  enhancedDesc  String?        // AI-enhanced description
+  tags          String[]       // AI-generated tags
+  images        String[]       // S3 URLs
+  virtualTour   String?
+  isActive      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  // Relations
+  sellerId      String
+  seller        User     @relation(fields: [sellerId], references: [id])
+  offers        Offer[]
+  escrows       Escrow[]
+
+  @@map("listings")
+}
+
+model Offer {
+  id            String      @id @default(cuid())
+  amount        Decimal     @db.Decimal(12, 2)
+  status        OfferStatus @default(PENDING)
+  message       String?
+  contingencies Json?
+  closingDate   DateTime?
+  earnestMoney  Decimal?    @db.Decimal(12, 2)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  // Relations
+  buyerId       String
+  buyer         User        @relation(fields: [buyerId], references: [id])
+  listingId     String
+  listing       Listing     @relation(fields: [listingId], references: [id])
+  parentOfferId String?     // For counter offers
+  parentOffer   Offer?      @relation("OfferCounters", fields: [parentOfferId], references: [id])
+  counterOffers Offer[]     @relation("OfferCounters")
+  escrow        Escrow?
+
+  @@map("offers")
+}
+
+model Escrow {
+  id              String       @id @default(cuid())
+  status          EscrowStatus @default(OPEN)
+  depositAmount   Decimal      @db.Decimal(12, 2)
+  closingDate     DateTime
+  title           String?
+  notes           String?
+  documents       Json?        // Document metadata and S3 URLs
+  milestones      Json?        // Escrow milestones and completion status
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  // Relations
+  buyerId         String
+  buyer           User         @relation(fields: [buyerId], references: [id])
+  listingId       String
+  listing         Listing      @relation(fields: [listingId], references: [id])
+  offerId         String       @unique
+  offer           Offer        @relation(fields: [offerId], references: [id])
+
+  @@map("escrows")
+}
+
+model ServiceProvider {
+  id            String      @id @default(cuid())
+  businessName  String
+  serviceType   ServiceType
+  description   String?
+  rating        Decimal?    @db.Decimal(3, 2)
+  reviewCount   Int         @default(0)
+  phone         String?
+  email         String?
+  website       String?
+  address       String?
+  city          String?
+  state         String?
+  zipCode       String?
+  serviceArea   String[]    // Cities/zip codes served
+  pricing       Json?       // Pricing structure
+  availability  Json?       // Available time slots
+  certifications String[]
+  insurance     Boolean     @default(false)
+  isActive      Boolean     @default(true)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  // Relations
+  userId        String
+  user          User        @relation(fields: [userId], references: [id])
+  bookings      Booking[]
+
+  @@map("service_providers")
+}
+
+model Booking {
+  id              String        @id @default(cuid())
+  status          BookingStatus @default(REQUESTED)
+  serviceDate     DateTime
+  duration        Int?          // Duration in minutes
+  notes           String?
+  price           Decimal?      @db.Decimal(10, 2)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relations
+  clientId        String
+  client          User            @relation(fields: [clientId], references: [id])
+  serviceProviderId String
+  serviceProvider ServiceProvider @relation(fields: [serviceProviderId], references: [id])
+
+  @@map("bookings")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String   // Action performed
+  entity    String   // Entity type (User, Listing, etc.)
+  entityId  String   // ID of the entity
+  oldValues Json?    // Previous values
+  newValues Json?    // New values
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  // Relations
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}
+
+model MLSSync {
+  id          String   @id @default(cuid())
+  mlsId       String   @unique
+  lastSynced  DateTime
+  syncStatus  String   // SUCCESS, FAILED, PENDING
+  errorMessage String?
+  data        Json?    // Raw MLS data
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("mls_sync")
+}

@@ -93,7 +93,7 @@ export class NlpService {
       // Always include property type as a tag
       tags.unshift(propertyType.toLowerCase());
 
-      return [...new Set(tags)]; // Remove duplicates
+      return [...new Set(tags as string[])]; // Remove duplicates
     } catch (error) {
       this.logger.error('Failed to generate tags with Hugging Face:', error.message);
       return [propertyType.toLowerCase()]; // Fallback to property type only

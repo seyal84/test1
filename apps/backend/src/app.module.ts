@@ -9,14 +9,14 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { ListingsModule } from './listings/listings.module';
-import { OffersModule } from './offers/offers.module';
-import { EscrowModule } from './escrow/escrow.module';
-import { ServiceProvidersModule } from './service-providers/service-providers.module';
-import { BookingsModule } from './bookings/bookings.module';
-import { IntegrationsModule } from './integrations/integrations.module';
-import { FilesModule } from './files/files.module';
-import { AuditModule } from './audit/audit.module';
-import { HealthModule } from './health/health.module';
+// import { OffersModule } from './offers/offers.module';
+// import { EscrowModule } from './escrow/escrow.module';
+// import { ServiceProvidersModule } from './service-providers/service-providers.module';
+// import { BookingsModule } from './bookings/bookings.module';
+// import { IntegrationsModule } from './integrations/integrations.module';
+// import { FilesModule } from './files/files.module';
+// import { AuditModule } from './audit/audit.module';
+// import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -55,12 +55,10 @@ import { HealthModule } from './health/health.module';
     }),
 
     // Rate limiting
-    ThrottlerModule.forRoot([
-      {
-        ttl: 60000, // 1 minute
-        limit: 100, // 100 requests per minute
-      },
-    ]),
+    ThrottlerModule.forRoot({
+      ttl: 60000, // 1 minute
+      limit: 100, // 100 requests per minute
+    }),
 
     // Scheduling
     ScheduleModule.forRoot(),
@@ -70,14 +68,14 @@ import { HealthModule } from './health/health.module';
     AuthModule,
     UsersModule,
     ListingsModule,
-    OffersModule,
-    EscrowModule,
-    ServiceProvidersModule,
-    BookingsModule,
-    IntegrationsModule,
-    FilesModule,
-    AuditModule,
-    HealthModule,
+    // OffersModule,
+    // EscrowModule,
+    // ServiceProvidersModule,
+    // BookingsModule,
+    // IntegrationsModule,
+    // FilesModule,
+    // AuditModule,
+    // HealthModule,
   ],
 })
 export class AppModule {}

@@ -33,7 +33,7 @@ async function bootstrap() {
 
   // Global interceptors
   app.useGlobalInterceptors(new LoggingInterceptor());
-  app.useGlobalInterceptors(new AuditInterceptor());
+  // app.useGlobalInterceptors(new AuditInterceptor());
 
   // API prefix
   app.setGlobalPrefix('api/v1');

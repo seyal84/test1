@@ -3,41 +3,44 @@
   "version": "1.0.0",
   "description": "AI-powered real estate transaction platform",
   "private": true,
+  "scripts": {
+    "start": "./start-local.sh",
+    "stop": "./scripts/stop-local.sh",
+    "dev": "./start-local.sh",
+    "dev:backend": "./scripts/dev-backend.sh",
+    "dev:frontend": "./scripts/dev-frontend.sh",
+    "setup": "./scripts/setup-database.sh",
+    "install:all": "npm install && cd apps/backend && npm install && cd ../frontend && npm install",
+    "build:all": "cd apps/backend && npm run build && cd ../frontend && npm run build",
+    "test:all": "cd apps/backend && npm run test && cd ../frontend && npm run test",
+    "lint:all": "cd apps/backend && npm run lint && cd ../frontend && npm run lint",
+    "clean": "rm -rf node_modules apps/*/node_modules logs/*.log",
+    "logs": "tail -f logs/backend.log logs/frontend.log",
+    "db:studio": "cd apps/backend && npx prisma studio",
+    "db:migrate": "cd apps/backend && npx prisma migrate dev",
+    "db:generate": "cd apps/backend && npx prisma generate",
+    "db:reset": "cd apps/backend && npx prisma migrate reset"
+  },
   "workspaces": [
-    "packages/*",
     "apps/*"
   ],
-  "scripts": {
-    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
-    "dev:backend": "cd apps/backend && npm run start:dev",
-    "dev:frontend": "cd apps/frontend && npm run dev",
-    "build": "npm run build:backend && npm run build:frontend",
-    "build:backend": "cd apps/backend && npm run build",
-    "build:frontend": "cd apps/frontend && npm run build",
-    "test": "npm run test:backend && npm run test:frontend",
-    "test:backend": "cd apps/backend && npm run test",
-    "test:frontend": "cd apps/frontend && npm run test",
-    "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
-    "format": "prettier --write .",
-    "docker:build": "docker-compose build",
-    "docker:up": "docker-compose up -d",
-    "docker:down": "docker-compose down",
-    "infra:deploy": "cd infrastructure && npm run deploy",
-    "infra:destroy": "cd infrastructure && npm run destroy"
-  },
+  "keywords": [
+    "real-estate",
+    "homeflow",
+    "react",
+    "nestjs",
+    "typescript",
+    "postgresql",
+    "prisma"
+  ],
+  "author": "HomeFlow Team",
+  "license": "UNLICENSED",
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "@typescript-eslint/parser": "^6.0.0",
     "concurrently": "^8.2.0",
-    "eslint": "^8.44.0",
-    "eslint-config-prettier": "^8.8.0",
-    "eslint-plugin-react": "^7.32.2",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "prettier": "^3.0.0",
-    "typescript": "^5.1.6"
+    "cross-env": "^7.0.3"
   },
   "engines": {
     "node": ">=18.0.0",
-    "npm": ">=9.0.0"
+    "npm": ">=8.0.0"
   }
 }
